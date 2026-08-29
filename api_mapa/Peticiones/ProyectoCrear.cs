@@ -1,0 +1,43 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace ApiMapa.Peticiones;
+
+/// <summary>
+/// El cuerpo del POST. Siete campos obligatorios y uno opcional: fechaFin, que un
+/// proyecto en curso no tiene (C7). Si falta un obligatorio —o si un valor llega
+/// con el tipo equivocado— el framework responde 422 antes de que el negocio se
+/// entere (3_plan.md §4.1).
+/// </summary>
+public class ProyectoCrear
+{
+    [Required(ErrorMessage = "El campo id es obligatorio.")]
+    public int? Id { get; set; }
+
+    [Required(ErrorMessage = "El campo titulo es obligatorio.")]
+    [MaxLength(70, ErrorMessage = "El campo titulo no puede exceder los 70 caracteres.")]
+    public string Titulo { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "El campo resumen es obligatorio.")]
+    [MaxLength(256, ErrorMessage = "El campo resumen no puede exceder los 256 caracteres.")]
+    public string Resumen { get; set; } = string.Empty;
+
+    /// <summary>Un número, no una cadena: si llega "mucho", el framework responde
+    /// 422 antes de que el negocio se entere (C8).</summary>
+    [Required(ErrorMessage = "El campo presupuesto es obligatorio.")]
+    public double? Presupuesto { get; set; }
+
+    [Required(ErrorMessage = "El campo tipoFinanciacion es obligatorio.")]
+    [MaxLength(45, ErrorMessage = "El campo tipoFinanciacion no puede exceder los 45 caracteres.")]
+    public string TipoFinanciacion { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "El campo tipoFondos es obligatorio.")]
+    [MaxLength(45, ErrorMessage = "El campo tipoFondos no puede exceder los 45 caracteres.")]
+    public string TipoFondos { get; set; } = string.Empty;
+
+    /// <summary>Una fecha, no una cadena: si llega "ayer", es 422.</summary>
+    [Required(ErrorMessage = "El campo fechaInicio es obligatorio.")]
+    public DateTime? FechaInicio { get; set; }
+
+    /// <summary>El único opcional: un proyecto en curso no tiene fecha de fin.</summary>
+    public DateTime? FechaFin { get; set; }
+}

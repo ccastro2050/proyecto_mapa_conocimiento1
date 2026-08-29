@@ -1,0 +1,71 @@
+# ==============================================================
+# Módulo MAPA DE CONOCIMIENTO — versión 1
+#
+#   Navegador → API mapa de conocimiento (C#, :8076) → SQL Server (mapa_local)
+#
+# Uso: docker compose up -d --build     (UN solo comando)
+# Reset de la BD: docker compose down -v && docker compose up -d
+#
+# Compose v2 ignora la directiva 'version:' y advierte que está obsoleta:
+# por eso no aparece.
+# ==============================================================
+services:
+
+  # --- SQL Server 2022: el único motor del proyecto ---
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mapa-sqlserver
+    restart: unless-stopped
+    environment:
+      - ACCEPT_EULA=Y
+      # Contraseña a la vista: excepción declarada del Artículo 7 — plantilla
+      # didáctica en contenedores desechables. En un proyecto real va en .env.
+      - MSSQL_SA_PASSWORD=Aplicacionweb123!
+    ports:
+      - "11473:1433"
+    volumes:
+      - mssqldata:/var/opt/mssql
+    healthcheck:
+      # No basta con que el contenedor exista: hay que saber si el motor ya
+      # RESPONDE consultas. Tarda entre 30 y 60 segundos en aceptarlas.
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' -b"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+
+  # --- Inicializador: crea la base y corre el script UNA vez, y se muere ---
+  sqlserver-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mapa-sqlserver-init
+    restart: "no"
+    environment:
+      - MSSQL_SA_PASSWORD=Aplicacionweb123!
+    volumes:
+      - ./db:/scripts:ro
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "/scripts/init.sh"]
+
+  # --- La API: C# / ASP.NET Core, con el código montado y dotnet watch ---
+  api-mapa:
+    build: ./api_mapa
+    container_name: mapa-api
+    restart: unless-stopped
+    ports:
+      - "8076:8076"                # el MISMO número adentro y afuera
+    volumes:
+      - ./api_mapa:/app         # el código montado: guardar un .cs recompila solo
+      - /app/bin                   # bin y obj quedan DENTRO del contenedor (Linux),
+      - /app/obj                   #   sin mezclarse con los compilados de Windows
+    environment:
+      # El host es el NOMBRE del servicio. El doble guion bajo hace que ASP.NET
+      # lea esto como ConnectionStrings:SqlServer y SOBREESCRIBA appsettings.json.
+      - ConnectionStrings__SqlServer=Server=sqlserver,1433;Database=mapa_local;User Id=sa;Password=Aplicacionweb123!;TrustServerCertificate=True;
+    depends_on:
+      sqlserver-init:
+        condition: service_completed_successfully   # espera a que la base esté SEMBRADA
+
+volumes:
+  mssqldata:
