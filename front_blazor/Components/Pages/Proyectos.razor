@@ -1,0 +1,359 @@
+@page "/proyectos"
+@rendermode InteractiveServer
+@inject ServicioProyecto Servicio
+@inject IJSRuntime JS
+
+@*
+    ==================================================================
+    LA PANTALLA DE `proyecto`
+    ==================================================================
+
+    Tiene DIRECCIÓN PROPIA —/proyectos—, no una con el nombre de la tabla
+    como parámetro. Se puede guardar como marcador, mandar por correo y poner
+    en un menú (sección 6.1 de la metodología).
+
+    Y no le habla al usuario en jerga: aquí no aparece «PUT», ni «422», ni
+    `proyecto`. Los dos botones de guardar se llaman como el usuario
+    piensa; que uno mande un reemplazo y el otro una modificación parcial es
+    asunto del programa.
+*@
+
+<PageTitle>Proyectos</PageTitle>
+
+<div class="encabezado">
+    <div>
+        <h1>Proyectos</h1>
+        <p class="nota">
+            Los proyectos de investigación, con su financiación y sus fechas.
+            Las fichas retiradas dejan de aparecer aquí, pero no se borran: lo
+            que ya quedó registrado con ellas se conserva.
+        </p>
+    </div>
+    @if (!mostrandoFormulario)
+    {
+        <button class="boton primario" @onclick="Agregar">Agregar</button>
+    }
+</div>
+
+@* ─────────── LOS AVISOS ─────────── *@
+@foreach (var error in errores)
+{
+    <p class="aviso error">@error</p>
+}
+@if (!string.IsNullOrEmpty(exito))
+{
+    <p class="aviso exito">@exito</p>
+}
+
+@* ─────────── EL FORMULARIO ─────────── *@
+@if (mostrandoFormulario)
+{
+    <div class="tarjeta-formulario">
+        <h2>@(editando ? "Editar el proyecto" : "Agregar el proyecto")</h2>
+
+        <label>
+            Código
+            <input type="number" disabled="@editando" @bind="campoId" />
+            <span class="ayuda">Un número que identifica el proyecto. No se podrá cambiar después.</span>
+        </label>
+
+        <label>
+            Título
+            <input type="text" maxlength="70" @bind="campoTitulo" />
+        </label>
+
+        <label>
+            Resumen
+            <input type="text" maxlength="256" @bind="campoResumen" />
+        </label>
+
+        <label>
+            Presupuesto
+            <input type="number" @bind="campoPresupuesto" />
+        </label>
+
+        <label>
+            Tipo de financiación
+            <input type="text" maxlength="45" @bind="campoTipoFinanciacion" />
+        </label>
+
+        <label>
+            Tipo de fondos
+            <input type="text" maxlength="45" @bind="campoTipoFondos" />
+        </label>
+
+        <label>
+            Fecha de inicio
+            <input type="date" @bind="campoFechaInicio" />
+        </label>
+
+        <label>
+            Fecha de fin
+            <input type="date" @bind="campoFechaFin" />
+            <span class="ayuda">En blanco significa que el proyecto sigue abierto.</span>
+        </label>
+
+        @*
+            ==============================================================
+            LOS DOS BOTONES, QUE NO HACEN LO MISMO
+
+              · «Guardar la ficha completa» manda todo, así que un dato
+                obligatorio en blanco se rechaza.
+              · «Guardar solo lo que cambié» manda únicamente lo diligenciado,
+                así que el mismo formulario a medio llenar sí se guarda.
+
+            El mismo formulario, dos comportamientos, y la diferencia no la
+            decide ningún `if` de negocio: la decide QUÉ SE ENVÍA.
+            ==============================================================
+        *@
+        <div class="pareja">
+            @if (editando)
+            {
+                <button class="boton primario" @onclick="GuardarCompleta" disabled="@guardando">
+                    Guardar la ficha completa
+                </button>
+                <button class="boton" @onclick="GuardarLoQueCambio" disabled="@guardando">
+                    Guardar solo lo que cambié
+                </button>
+            }
+            else
+            {
+                <button class="boton primario" @onclick="Crear" disabled="@guardando">
+                    Agregar
+                </button>
+            }
+            <button class="boton" @onclick="Cancelar" disabled="@guardando">Cancelar</button>
+        </div>
+
+        @if (editando)
+        {
+            <span class="ayuda">
+                «La ficha completa» exige que los datos obligatorios estén
+                diligenciados. «Solo lo que cambié» guarda lo que usted escribió
+                y deja lo demás como estaba.
+            </span>
+        }
+    </div>
+}
+
+@* ─────────── EL LISTADO ─────────── *@
+@if (cargando)
+{
+    <p class="nota">Cargando…</p>
+}
+else if (filas.Count > 0)
+{
+    <div class="tabla-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Título</th>
+                    <th>Resumen</th>
+                    <th>Presupuesto</th>
+                    <th>Tipo de financiación</th>
+                    <th>Tipo de fondos</th>
+                    <th>Fecha de inicio</th>
+                    <th>Fecha de fin</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var fila in filas)
+                {
+                    <tr>
+                        <td>@fila.Id</td>
+                        <td>@fila.Titulo</td>
+                        <td>@fila.Resumen</td>
+                        <td>@fila.Presupuesto</td>
+                        <td>@fila.TipoFinanciacion</td>
+                        <td>@fila.TipoFondos</td>
+                        <td>@(fila.FechaInicio?.ToString("yyyy-MM-dd") ?? "—")</td>
+                        <td>@(fila.FechaFin?.ToString("yyyy-MM-dd") ?? "—")</td>
+                        <td>
+                            <div class="acciones">
+                                <button class="boton" @onclick="() => Editar(fila)">Editar</button>
+                                <button class="boton peligro" @onclick="() => Retirar(fila)">Retirar</button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <p class="nota">@filas.Count ficha(s).</p>
+}
+else
+{
+    @* Vacío NO es un error, y la pantalla lo distingue: si la API está caída,
+       arriba hay además un aviso rojo. *@
+    <p class="vacio">
+        Todavía no hay proyectos. Use «Agregar» para crear la primera.
+    </p>
+}
+
+@code {
+    private List<Proyecto> filas = new();
+    private List<string> errores = new();
+    private string exito = string.Empty;
+
+    private bool cargando = true;
+    private bool guardando;
+    private bool mostrandoFormulario;
+    private bool editando;
+
+    private int campoId;
+    private string campoTitulo = string.Empty;
+    private string campoResumen = string.Empty;
+    private double campoPresupuesto;
+    private string campoTipoFinanciacion = string.Empty;
+    private string campoTipoFondos = string.Empty;
+    private DateTime? campoFechaInicio;
+    private DateTime? campoFechaFin;
+
+    protected override async Task OnInitializedAsync() => await Cargar();
+
+    private async Task Cargar()
+    {
+        cargando = true;
+        var r = await Servicio.Listar();
+        cargando = false;
+
+        // Aun con error se pinta la pantalla: el usuario ve el aviso DENTRO de
+        // la aplicación, no una página de excepción.
+        errores = r.Errores;
+        filas = r.Ok ? r.Datos! : new();
+    }
+
+    private void Agregar()
+    {
+        Limpiar();
+        editando = false;
+        mostrandoFormulario = true;
+    }
+
+    private void Editar(Proyecto fila)
+    {
+        campoId = fila.Id;
+        campoTitulo = fila.Titulo;
+        campoResumen = fila.Resumen;
+        campoPresupuesto = fila.Presupuesto;
+        campoTipoFinanciacion = fila.TipoFinanciacion;
+        campoTipoFondos = fila.TipoFondos;
+        campoFechaInicio = fila.FechaInicio;
+        campoFechaFin = fila.FechaFin;
+        editando = true;
+        mostrandoFormulario = true;
+        errores = new();
+        exito = string.Empty;
+    }
+
+    private void Cancelar()
+    {
+        mostrandoFormulario = false;
+        Limpiar();
+    }
+
+    private void Limpiar()
+    {
+        campoId = default;
+        campoTitulo = string.Empty;
+        campoResumen = string.Empty;
+        campoPresupuesto = default;
+        campoTipoFinanciacion = string.Empty;
+        campoTipoFondos = string.Empty;
+        campoFechaInicio = default;
+        campoFechaFin = default;
+        errores = new();
+        exito = string.Empty;
+    }
+
+    private async Task Crear()
+    {
+        guardando = true;
+        var r = await Servicio.Crear(new Proyecto
+        {
+            Id = campoId,
+            Titulo = campoTitulo.Trim(),
+            Resumen = campoResumen.Trim(),
+            Presupuesto = campoPresupuesto,
+            TipoFinanciacion = campoTipoFinanciacion.Trim(),
+            TipoFondos = campoTipoFondos.Trim(),
+            FechaInicio = campoFechaInicio,
+            FechaFin = campoFechaFin,
+        });
+        guardando = false;
+
+        await TrasGuardar(r, $"Se agregó el proyecto {campoId}.");
+    }
+
+    private async Task GuardarCompleta()
+    {
+        guardando = true;
+        var r = await Servicio.Reemplazar(campoId, new Proyecto
+        {
+            Titulo = campoTitulo.Trim(),
+            Resumen = campoResumen.Trim(),
+            Presupuesto = campoPresupuesto,
+            TipoFinanciacion = campoTipoFinanciacion.Trim(),
+            TipoFondos = campoTipoFondos.Trim(),
+            FechaInicio = campoFechaInicio,
+            FechaFin = campoFechaFin,
+        });
+        guardando = false;
+
+        await TrasGuardar(r, $"Se guardó el proyecto {campoId}.");
+    }
+
+    private async Task GuardarLoQueCambio()
+    {
+        guardando = true;
+        var r = await Servicio.Actualizar(campoId, campoTitulo, campoResumen, campoPresupuesto, campoTipoFinanciacion, campoTipoFondos, campoFechaInicio, campoFechaFin);
+        guardando = false;
+
+        await TrasGuardar(r, $"Se guardó el proyecto {campoId}.");
+    }
+
+    /// <summary>
+    /// Lo que pasa después de cualquier guardado: si salió bien se cierra el
+    /// formulario y se recarga; si no, **el formulario se queda con lo que la
+    /// persona había escrito**, porque perder lo digitado por un error de
+    /// validación es castigarla dos veces.
+    /// </summary>
+    private async Task TrasGuardar(Resultado<bool> r, string mensaje)
+    {
+        if (r.Ok)
+        {
+            mostrandoFormulario = false;
+            exito = mensaje;
+            errores = new();
+            await Cargar();
+        }
+        else
+        {
+            errores = r.Errores;
+            exito = string.Empty;
+        }
+    }
+
+    private async Task Retirar(Proyecto fila)
+    {
+        // Se pregunta antes: retirar no se deshace desde esta pantalla.
+        var seguro = await JS.InvokeAsync<bool>(
+            "confirm", $"¿Retirar {fila.Id} del uso?");
+        if (!seguro) return;
+
+        var r = await Servicio.Eliminar(fila.Id);
+        if (r.Ok)
+        {
+            exito = $"Se retiró el proyecto {fila.Id}.";
+            errores = new();
+            await Cargar();
+        }
+        else
+        {
+            errores = r.Errores;
+            exito = string.Empty;
+        }
+    }
+}

@@ -1,7 +1,7 @@
 # ==============================================================
 # Módulo MAPA DE CONOCIMIENTO — versión 1
 #
-#   Navegador → API mapa de conocimiento (C#, :8076) → SQL Server (mapa_local)
+#   FRONT Blazor (:8077) → API mapa de conocimiento (C#, :8076) → SQL Server (mapa_local)
 #
 # Uso: docker compose up -d --build     (UN solo comando)
 # Reset de la BD: docker compose down -v && docker compose up -d
@@ -66,6 +66,27 @@ services:
     depends_on:
       sqlserver-init:
         condition: service_completed_successfully   # espera a que la base esté SEMBRADA
+
+  # --- El FRONT: Blazor Server, C#/.NET ---------------------------------
+  front-blazor:
+    build: ./front_blazor
+    container_name: mapa-front
+    restart: unless-stopped
+    ports:
+      - "8077:8077"           # http://localhost:8077
+    volumes:
+      - ./front_blazor:/app        # el código montado: guardar un .razor recompila solo
+      - /app/bin                   # bin y obj quedan DENTRO del contenedor
+      - /app/obj
+    environment:
+      # El NOMBRE del servicio, no localhost: dentro del contenedor del front,
+      # localhost sería el front mismo.
+      - UrlApi=http://api-mapa:8076
+    depends_on:
+      - api-mapa
+      # NO depende de sqlserver, y eso no es un olvido: el front no tiene nada
+      # que hacer con la base. Si algún día necesitara esa dependencia, sería la
+      # señal de que alguien rompió la arquitectura.
 
 volumes:
   mssqldata:
