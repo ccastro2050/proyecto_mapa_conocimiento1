@@ -29,6 +29,8 @@ sus catálogos, y compila la API. Al terminar:
 
 | Qué | Dónde |
 |---|---|
+| **LA PANTALLA** (lo que ve el usuario) | http://localhost:8077 |
+| Proyectos | http://localhost:8077/proyectos |
 | **API — diagnóstico** | http://localhost:8076/ |
 | **Documentación interactiva** | http://localhost:8076/swagger |
 | Listado de proyectos | http://localhost:8076/api/proyecto |

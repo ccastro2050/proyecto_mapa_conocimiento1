@@ -92,3 +92,52 @@ sección conserva los smokes de las versiones cerradas.
 | El presupuesto vuelve entre comillas | Se declaró como texto en el modelo: debe ser `double` |
 | Un inactivo aparece en el listado | A alguna consulta le falta `WHERE activo = 1` |
 | `bad interpreter: /bin/bash^M` | `db/init.sh` con finales de línea de Windows (`.gitattributes`) |
+
+
+---
+
+## El front: la otra mitad de la versión
+
+`docker compose up -d --build` levanta **tres** contenedores, no dos:
+
+| Qué | Dónde |
+|---|---|
+| **LA PANTALLA** (lo que ve el usuario) | <http://localhost:8077> |
+| Proyectos | <http://localhost:8077/proyectos> |
+| La API | <http://localhost:8076> |
+
+### La prueba automática
+
+```powershell
+python pruebas_humo/humo_front.py
+```
+
+Comprueba que las pantallas responden, que **los datos que muestran son los que
+dio la API**, que no aparece jerga, y —lo que importa— que **con la API apagada
+la pantalla sigue en pie con su aviso**. La apaga y la vuelve a encender sola.
+
+**Lo que esa prueba NO puede hacer:** Blazor Server manda los clics por una
+conexión persistente, así que un guion no puede llenar el formulario. Eso queda
+para el recorrido a mano.
+
+### El recorrido a mano, que hace una persona
+
+1. Abra <http://localhost:8077>. Entre a **Proyectos**: la
+   barra de direcciones dice `/proyectos` — una dirección de verdad, no
+   un molde.
+2. **Agregue** una ficha. Aparece en la tabla.
+3. **Agréguela otra vez**, con el mismo código. Sale un aviso rojo con el
+   mensaje que mandó la API — y **el formulario conserva lo que usted escribió**.
+4. **Edítela** y use **«Guardar solo lo que cambié»** dejando campos vacíos:
+   guarda, y lo que dejó en blanco queda como estaba.
+5. Ahora **«Guardar la ficha completa»** con un campo obligatorio vacío: se
+   rechaza. *El mismo formulario, dos comportamientos.*
+6. **Retírela.** Pide confirmación y desaparece. Pero la fila **sigue en la
+   base**: el borrado es lógico.
+7. **Apague la API** y recargue la pantalla:
+   ```powershell
+   docker compose stop api-mapa
+   ```
+   La pantalla sigue cargando, con su menú y su pie, y dice que el servicio no
+   está disponible. **Eso es lo que demuestra que son dos procesos.** Vuelva a
+   levantarla con `docker compose start api-mapa`.

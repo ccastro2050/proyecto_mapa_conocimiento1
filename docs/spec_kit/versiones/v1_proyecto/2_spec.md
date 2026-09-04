@@ -124,3 +124,45 @@ Solo se modifican los campos enviados. Cuerpo vacío → 400.
 2. La lista de [9_checklist.md](9_checklist.md) está en verde y firmada.
 3. No queda ningún `[NECESITA ACLARACIÓN: …]`.
 4. Se hace commit y **tag `v1`**.
+
+
+---
+
+## La PANTALLA — el requisito que completa la versión
+
+Los requisitos anteriores describen la API. **Este describe lo que ve quien la
+usa**, y sin él la versión no está cerrada: una versión que responde por HTTP
+pero no se puede usar es media versión (Artículo 1.1).
+
+En `http://localhost:8077/proyectos`:
+
+| Lo que se puede hacer | Cómo se ve |
+|---|---|
+| **Consultar** | Una tabla con sus columnas: Código · Título · Resumen · Presupuesto… |
+| **Agregar** una ficha | Un formulario con **un** botón |
+| **Corregir** una ficha | El mismo formulario con **dos**: «Guardar la ficha completa» y «Guardar solo lo que cambié» |
+| **Retirar** una ficha | Un botón que pide confirmación primero |
+
+**Tres reglas de esta pantalla**, y las tres se comprueban:
+
+1. **No le habla al usuario en jerga.** Ni «PUT», ni «422», ni rutas de la API.
+   Los botones se llaman como el usuario piensa; que uno mande un reemplazo y
+   el otro una modificación parcial es asunto del programa.
+2. **Un error no pierde lo escrito.** Si la API rechaza el guardado, el
+   formulario vuelve con lo que la persona había digitado.
+3. **Vacío no es error.** Sin filas, la pantalla muestra un recuadro que lo
+   dice, no un aviso rojo.
+
+> **Los dos botones son la lección del contrato hecha pantalla.** El mismo
+> formulario a medio llenar que «la ficha completa» rechaza, «solo lo que
+> cambié» lo guarda. La diferencia no la decide ningún `if`: la decide **qué se
+> envía**.
+
+### Criterios de aceptación de la pantalla
+
+| # | Criterio | Cómo se comprueba |
+|---|---|---|
+| P1 | La pantalla muestra las filas **que dio la API** | Se le piden a la API y se buscan en el texto visible de la pantalla |
+| P2 | El ciclo completo se hace **desde la pantalla**, sin Swagger ni `curl` | Recorrido a mano de `7_quickstart.md` |
+| P3 | **No hay jerga** en el texto visible | Se quitan las etiquetas HTML y se busca |
+| P4 | **Son dos procesos**: con la API apagada la pantalla sigue en pie, con su aviso y **sin un solo dato** | `docker compose stop api-mapa` |

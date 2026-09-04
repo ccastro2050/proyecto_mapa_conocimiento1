@@ -214,3 +214,65 @@ Tres cosas que conviene vigilar desde el primer archivo:
 
 Las tres están decididas en las Clarificaciones. Si la IA propone otra
 cosa, no está mejorando: está ignorando la spec.
+
+
+---
+
+## La otra mitad: el FRONT
+
+Todo lo anterior construye la API. **La versión no está cerrada sin su
+pantalla** (Artículo 1.1), y esto es lo que hay que agregarle al prompt.
+
+```text
+9. LA VERSIÓN INCLUYE SU PANTALLA, y es la mitad del trabajo, no un añadido.
+   Un FRONT en BLAZOR SERVER (.NET 10), en su propio proyecto y en su propio
+   contenedor, publicando el puerto 8077:
+
+   · una pantalla por recurso, con DIRECCIÓN PROPIA (/proyectos), nunca
+     una ruta con el nombre de la tabla como parámetro;
+   · un SERVICIO POR RECURSO —ServicioProyecto con seis métodos—, nunca un
+     ApiService genérico con la tabla como parámetro;
+   · la pantalla NO le habla al usuario en jerga: ni PUT, ni PATCH, ni 422, ni
+     rutas de la API. Los dos botones de guardar se llaman "Guardar la ficha
+     completa" y "Guardar solo lo que cambié";
+   · un error de la API NO borra lo que la persona había escrito;
+   · y sin filas, un recuadro que diga que todavía no hay ninguna: vacío no es
+     error.
+
+   TRES COSAS QUE VAS A QUERER HACER Y NO DEBES:
+
+   a) Servir las páginas desde la misma API. NO: son dos procesos, y hay que
+      poder demostrarlo apagando uno.
+   b) Un ApiService genérico. NO: un servicio por recurso.
+   c) Meter Bootstrap o cualquier biblioteca por CDN. NO: el CSS va escrito a
+      mano. Un front que necesita internet para verse bien no arranca en un
+      salón sin red.
+
+   d) Compartir la clase del modelo con una referencia de proyecto. Están los
+      dos en C# y aun así lo único que comparten es el JSON: si se compartiera,
+      un cambio interno de la API rompería el front sin que nadie tocara el
+      contrato.
+
+Y hay un criterio que se comprueba apagando un contenedor: con la API apagada,
+la pantalla tiene que SEGUIR RESPONDIENDO, con su menú y su aviso, y SIN UN
+SOLO DATO. Si sigue mostrando las filas, el front está leyendo de donde no
+debe.
+```
+
+### Lo que la IA rompe primero, en el front
+
+| Qué | Por qué pasa | Qué revisar |
+|---|---|---|
+| **Un `ApiService` genérico** | Es más corto, y con una sola tabla ni se nota | ¿El servicio se llama `ServicioProyecto` o `ApiService`? |
+| **Bootstrap por CDN** | Es lo que hace todo el mundo | ¿`App.razor` tiene un `<link>` a un dominio externo? |
+| **Tratar el 204 como error** | Un 204 no trae cuerpo, y el código que espera JSON revienta | ¿Qué muestra la pantalla con la tabla vacía? Debe decir «todavía no hay», no dar error |
+
+
+**Y la pregunta que hay que hacerle siempre, porque no la contesta sola:**
+
+> «Apaga la API con `docker compose stop api-mapa` y dime qué
+> muestra la pantalla.»
+
+Si la respuesta no es «sigue en pie, con un aviso y sin datos», el front está
+leyendo de donde no debe — o no maneja el caso de que la API no responda, que
+es el mismo problema visto de otro lado.

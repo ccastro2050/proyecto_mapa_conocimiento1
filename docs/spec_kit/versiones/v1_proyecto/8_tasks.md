@@ -135,3 +135,29 @@ que ya está en pie: `curl -i http://localhost:8076/api/proyecto` devuelve
 
 **Verificar:** los 7 criterios de aceptación en verde, con la salida real
 pegada. Sin eso no hay tag.
+
+
+## El FRONT: la otra mitad de la versión
+
+Va **después** de que la API responda y **antes** del cierre. Sin esta fase la
+versión está a medias.
+
+| # | Tarea | Archivo |
+|---|---|---|
+| 1 | El proyecto Blazor Server, **sin ningún paquete de acceso a datos** | `front_blazor/FrontMapa.csproj` |
+| 2 | `ServicioProyecto`: seis métodos, uno por operación | `Servicios/ServicioProyecto.cs` |
+| 3 | El tipo `Resultado<T>`, para que las páginas no vean códigos de estado | `Servicios/ServicioProyecto.cs` |
+| 4 | La traducción del sobre de error a textos para el usuario | `Servicios/ServicioProyecto.cs` |
+| 5 | El marco y el menú, con **un enlace por pantalla** | `Components/Layout/` |
+| 6 | La pantalla del CRUD, con los **dos botones** de guardar | `Components/Pages/Proyectos.razor` |
+| 7 | Los estilos, escritos a mano | `wwwroot/app.css` |
+| 8 | El servicio en el compose, en el **8077**, sin `depends_on: sqlserver` | `docker-compose.yml` |
+| 9 | La prueba de humo del front | `pruebas_humo/humo_front.py` |
+
+**Verificación de la fase:**
+
+- [ ] `http://localhost:8077/proyectos` muestra las filas.
+- [ ] El recorrido a mano de `7_quickstart.md` se hizo completo.
+- [ ] `python pruebas_humo/humo_front.py` da todo en verde.
+- [ ] **Con `docker compose stop api-mapa`, la pantalla sigue en pie
+      con su aviso y sin un solo dato.**

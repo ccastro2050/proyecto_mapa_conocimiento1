@@ -8,6 +8,18 @@
 > [modulo_mapa_conocimiento.md](../../../ProyectosDeAula/docs/modulo_mapa_conocimiento.md);
 > aquí no se inventa nada, se ordena.
 
+## La estrategia: back y front EN PARALELO
+
+**Cada versión entrega su parte de la API *y* su parte del front**, y una
+versión **no está cerrada** si la API responde y la pantalla no.
+
+El front es **Blazor Server** sobre .NET 10, en un tercer contenedor, en el
+puerto **8077**. Habla con la API solo por HTTP: no tiene cadena
+de conexión, ni driver de base de datos, ni servicio `sqlserver` en su
+`depends_on`.
+
+Está exigido por el **Artículo 1.1** de la [constitución](../1_constitution.md).
+
 ## La ruta
 
 | Versión | Qué agrega (acumulativo) | Estado |

@@ -363,3 +363,46 @@ ignora y advierte que está obsoleto.
 
 **Complejidad justificada:** ninguna. La v1 no se desvía de ningún
 artículo, así que no hay excepciones que sustentar.
+
+
+---
+
+## El stack del FRONT
+
+| Pieza | Elección | Por qué |
+|---|---|---|
+| Front | **Blazor Server**, .NET 10 | Es lo que pide el módulo. El componente se renderiza en el servidor y el navegador recibe HTML ya armado |
+| Cómo habla con la API | `HttpClient` y **JSON**, nada más | Sin biblioteca compartida, sin referencia de proyecto, sin paquete común |
+| Estilos | **CSS escrito a mano** | Cero dependencias. Un front que necesita internet para verse bien no arranca en un salón sin red |
+| Puerto | **8077** | Registrado en `PUERTOS.md`, sin chocar con nadie |
+
+> **Aquí hay una tentación que no existiría con dos lenguajes distintos.** El
+> front y la API están los dos en C#, así que *se podría* compartir la clase del
+> modelo con una referencia de proyecto. **No se hace:** ataría los dos
+> procesos, y renombrar una propiedad dentro de la API rompería el front sin que
+> nadie tocara el contrato.
+
+**Un servicio por recurso, no uno genérico.** `ServicioProyecto` tiene seis
+métodos con nombre —`Listar`, `Obtener`, `Crear`, `Reemplazar`, `Actualizar`,
+`Eliminar`— y sabe de una sola tabla. Cuando lleguen más recursos habrá más
+servicios, no un `ApiService.Listar(string tabla)`: es la sección 6.1 de la
+metodología del curso, aplicada del lado del front.
+
+### Las carpetas del front
+
+```
+front_blazor/
+├── FrontMapa.csproj    sin paquetes: no hay driver de base de datos
+├── Program.cs                   el ensamblador: registra UN servicio por recurso
+├── appsettings.json             la dirección de la API (el compose la sobreescribe)
+├── Dockerfile                   dotnet watch, igual que la API
+├── Servicios/                   la capa de datos del front
+├── Components/
+│   ├── Layout/                  el marco y el menú
+│   └── Pages/                   una pantalla por recurso
+└── wwwroot/app.css              los estilos, escritos a mano
+```
+
+**Que en el `.csproj` no aparezca ningún paquete de acceso a datos no es un
+olvido: es la comprobación** de que este proceso no puede llegar a
+SQL Server ni queriendo.
