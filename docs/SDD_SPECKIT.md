@@ -228,10 +228,10 @@ tocar.
 ```markdown
 | Tabla | PK | Semilla |
 |---|---|---|
-| proyecto | codigo | 8 filas (PR001 "Laptop…", stock 17, …) |
+| proyecto | id | sin filas: la tabla arranca vacía |
 
-El stock lo mueve el TRIGGER al facturar: la API tiene PROHIBIDO
-escribirlo directamente.
+`activo` lo escribe SOLO el DELETE: la API tiene PROHIBIDO recibirlo en
+el cuerpo de un POST o de un PUT.
 ```
 
 **6. `6_contracts.md` — el contrato HTTP exacto.**
@@ -374,10 +374,10 @@ La mitad del valor del kit se juega aquí. Cuatro reglas:
    jamás se inventa la respuesta:
 
 ```markdown
-### RF6 — Eliminar proyecto
-DELETE /api/proyecto/{codigo} elimina el registro de proyecto.
-[NECESITA ACLARACIÓN: ¿borrado físico, o lógico como la anulación
-de facturas? Afecta al criterio 5 y al contrato del DELETE.]
+### RF6 — Retirar el proyecto
+DELETE /api/proyecto/{id} retira el proyecto del uso.
+[NECESITA ACLARACIÓN: ¿borrado físico, o lógico marcando una columna
+de estado? Afecta al criterio 5 y al contrato del DELETE.]
 ```
 
 Esa costumbre —marcar en vez de rellenar— es la vacuna contra el vicio
@@ -496,7 +496,7 @@ Gemini CLI…).
 
 ```bash
 uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
-specify init mi_v1_producto --integration copilot
+specify init mi_v1_proyecto --integration copilot
 specify version
 ```
 
@@ -601,13 +601,14 @@ clarify pregunta:
     Impacto si es (b): cambia el contrato del DELETE, obliga a una
     columna de estado en 5_data_model y reescribe el criterio 4.
 
-Usted responde:  a
+Usted responde:  b
 
 clarify NO crea un archivo: escribe dentro de 2_spec.md
     ## Clarificaciones
-    C5 — DELETE, ¿físico o lógico? -> Físico: la tabla proyecto no
-    tiene columna de estado. El borrado lógico llega con la anulación
-    de facturas, en una versión posterior.
+    C5 — DELETE, ¿físico o lógico? -> LÓGICO: la tabla proyecto gana
+    una columna `activo`, el DELETE la pone en falso y TODAS las
+    consultas filtran por ella. Cambia el contrato del DELETE y el
+    criterio 5, y queda como Artículo 6 de la constitución.
 ```
 
 **A mano, en este curso:** eso es exactamente la
