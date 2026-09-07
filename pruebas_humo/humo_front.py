@@ -148,14 +148,29 @@ for ruta in ("/", "/proyectos"):
     revisar(f"{ruta:26s} sin jerga", not visto, str(visto))
 
 print()
-print("=== 5. LA PRUEBA DE LOS DOS PROCESOS: se apaga la API ===")
-print("    (esto tarda unos segundos)")
-subprocess.run(["docker", "compose", "stop", "api-mapa"],
+print("=== 5. LA PRUEBA DE LOS DOS PROCESOS: se deja a la API sin responder ===")
+print("    (la pantalla espera su tiempo de espera, unos diez segundos)")
+# ======================================================================
+# POR QUÉ `pause` Y NO `stop`, QUE ES LO QUE UNO ESCRIBIRÍA
+#
+# `docker compose stop` + `start` también deja a la API fuera de juego… pero
+# volver a encenderla NO es arrancar un programa ya compilado: el contenedor
+# corre `dotnet watch`, así que **recompila**. Medido en esta máquina: 160 y
+# 220 segundos según la carga, y una corrida en la que no volvió en cinco
+# minutos. La prueba se ponía roja con el sistema perfectamente sano — o sea,
+# estaba midiendo el computador, no el sistema.
+#
+# `pause` congela el proceso y `unpause` lo descongela, **al instante y sin
+# recompilar**. Para lo que aquí se demuestra da igual —y hasta es más fiel—
+# que la API esté caída o colgada: en los dos casos el front se queda sin
+# datos y tiene que sostenerse solo.
+# ======================================================================
+subprocess.run(["docker", "compose", "pause", "api-mapa"],
                capture_output=True, text=True)
-time.sleep(3)
+time.sleep(2)
 
 c, t = ver(f"{FRONT}/proyectos")
-revisar("la pantalla SIGUE respondiendo con la API apagada", c == 200)
+revisar("la pantalla SIGUE respondiendo con la API sin responder", c == 200)
 revisar("  y muestra el aviso dentro de la aplicación",
         "no está disponible" in visible(t))
 revisar("  con su menú y su marco intactos",
@@ -163,12 +178,12 @@ revisar("  con su menú y su marco intactos",
 revisar("  y SIN datos: el front no puede llegar a la base por su cuenta",
         (not primeras or primeras[0] not in visible(t)))
 
-subprocess.run(["docker", "compose", "start", "api-mapa"],
+subprocess.run(["docker", "compose", "unpause", "api-mapa"],
                capture_output=True, text=True)
-print("    API encendida otra vez; esperando a que responda…")
-for _ in range(40):
+print("    API descongelada; responde enseguida")
+for _ in range(20):
     c, _t = ver(f"{API}/api/proyecto?limite=1")
-    if c == 200:
+    if c in (200, 204):
         break
     time.sleep(3)
 c, t = ver(f"{FRONT}/proyectos")
